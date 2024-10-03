@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import uploadArea from "../assets/upload_area.png";
-import { Icon, Image, Lock, Mail, User, X } from "lucide-react";
+import { Lock, Mail, User, X } from "lucide-react";
 import Input from "../components/Input";
 import { Link } from "react-router-dom";
+import uploadFile from "../lib/uploadFile";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const SignupPage = () => {
   const [image, setImage] = useState(null);
@@ -29,10 +32,47 @@ const SignupPage = () => {
     setImage(null);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log(data);
+  const handleUploadImage = async (e) => {
+    const file = e.target.files[0];
+    setImage(file);
+    const uploadImage = await uploadFile(file);
+    setData((prev) => {
+      return {
+        ...prev,
+        profileImage: uploadImage?.url,
+      };
+    });
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const URL = `${import.meta.env.VITE_BACKEND_URL}/api/signup`;
+    try {
+      const response = await axios.post(URL, data,{
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        toast.success(response.data.message);
+        setData({
+          name: "",
+          email: "",
+          password: "",
+          profileImage: "",
+        });
+      }
+    } catch (error) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error(error.message);
+      }
+    }
+  };
+
   return (
     <div className="bg-white w-[90%] max-w-md  rounded overflow-hidden p-4 mx-auto border  mt-10">
       <h3 className="text-primary text-center font-semibold text-2xl mt-5">
@@ -47,6 +87,7 @@ const SignupPage = () => {
             type="text"
             id="name"
             name="name"
+            value={data.name}
             placeholder="Enter your Name"
             required
           />
@@ -60,6 +101,7 @@ const SignupPage = () => {
             type="email"
             id="email"
             name="email"
+            value={data.email}
             placeholder="Enter your Email Address"
             required
           />
@@ -73,6 +115,7 @@ const SignupPage = () => {
             type="password"
             id="password"
             name="password"
+            value={data.password}
             placeholder="Enter your password"
             required
           />
@@ -107,7 +150,7 @@ const SignupPage = () => {
             name="image"
             accept="image/png, image/gif, image/jpeg"
             hidden
-            onChange={(e) => setImage(e.target.files[0])}
+            onChange={handleUploadImage}
           />
         </div>
 
