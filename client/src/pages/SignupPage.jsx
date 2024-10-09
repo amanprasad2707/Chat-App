@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import uploadArea from "../assets/upload_area.png";
 import { Lock, Mail, User, X } from "lucide-react";
 import Input from "../components/Input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import uploadFile from "../lib/uploadFile";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 const SignupPage = () => {
+
+  const navigate = useNavigate();
   const [image, setImage] = useState(null);
   const [data, setData] = useState({
     name: "",
@@ -53,6 +55,7 @@ const SignupPage = () => {
       });
       if (response.data.success) {
         toast.success(response.data.message);
+        navigate('/');
         setData({
           name: "",
           email: "",
