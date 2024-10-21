@@ -4,6 +4,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../redux/userSlice";
 import Sidebar from "../components/Sidebar";
+import logo from "../assets/chatterbee-logo.svg";
 
 const Home = () => {
   const location = useLocation();
@@ -39,6 +40,12 @@ const Home = () => {
       <section className={`${basePath && "hidden"}`}>
         <Outlet />
       </section>
+      <div className={`justify-center items-center flex-col gap-4 hidden ${basePath && "lg:flex" }`}>
+        <div>
+          <img src={logo} alt={logo} width="400px" />
+        </div>
+        <p className="mt-1 text-lg text-slate-500">select user to send message</p>
+      </div>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from 'cookie-parser'
 import connectDB from "./config/MongoDB.js";
 import authRoutes from "./routes/auth.route.js";
+import searchUser from './routes/index.js'
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api', authRoutes);
+app.use('/api', searchUser);
 
 
 app.listen(port, () => {
