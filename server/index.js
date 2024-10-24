@@ -4,9 +4,10 @@ import cors from "cors";
 import cookieParser from 'cookie-parser'
 import connectDB from "./config/MongoDB.js";
 import authRoutes from "./routes/auth.route.js";
-import searchUser from './routes/index.js'
+import searchUser from './routes/index.js';
+import { app, server } from './socket/index.js';
 
-const app = express();
+// const app = express();
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -28,6 +29,6 @@ app.use('/api', authRoutes);
 app.use('/api', searchUser);
 
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is listening on ${port}`);
 })
