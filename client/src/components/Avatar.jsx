@@ -4,7 +4,8 @@ import { FaUserCircle } from "react-icons/fa";
 import { useSelector } from "react-redux";
 
 const Avatar = ({ userId, name, imageUrl, width, height, color }) => {
-  // const onlineUser = useSelector(state => state?.user?.onlineUser)
+  const onlineUser = useSelector(state => state?.user?.onlineUser)
+
   let avatarName = "";
 
   if (name) {
@@ -31,7 +32,7 @@ const Avatar = ({ userId, name, imageUrl, width, height, color }) => {
 
   const randomNumber = Math.floor(Math.random() * 9);
 
-  // const isOnline = onlineUser.includes(userId)
+  const isOnline = onlineUser.includes(userId)
   return (
     <div
       className={`text-slate-800  rounded-full font-bold relative`}
@@ -61,11 +62,11 @@ const Avatar = ({ userId, name, imageUrl, width, height, color }) => {
         <FaUserCircle size={width} color={color} />
       )}
 
-      {/* {
+      {
           isOnline && (
             <div className='bg-green-600 p-1 absolute bottom-2 -right-1 z-10 rounded-full'></div>
           )
-        } */}
+        }
     </div>
   );
 };

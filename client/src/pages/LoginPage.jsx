@@ -4,8 +4,11 @@ import { Mail, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useDispatch } from "react-redux";
+import { setUser } from "../redux/userSlice";
 
 const LoginPage = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [data, setData] = useState({
@@ -33,6 +36,11 @@ const LoginPage = () => {
       if (response.data.success) {
         toast.success(response.data.message);
         navigate("/");
+        // Convert user data to a JSON string and store it in localStorage
+        
+localStorage.setItem("userData", JSON.stringify(response.data.userData));
+dispatch(setUser(response.data.userData));
+console.log(response.data.userData);
         setData({
           email: "",
           password: "",

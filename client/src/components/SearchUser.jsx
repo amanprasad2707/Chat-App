@@ -19,7 +19,7 @@ const SearchUser = ({ onClose }) => {
         searchUser: search,
       });
       setSearchUser(response.data.users);
-      console.log(response);
+      // console.log(response);
       setLoading(false);
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong!");
@@ -32,7 +32,7 @@ const SearchUser = ({ onClose }) => {
   }, [search]);
 
   return (
-    <div className="fixed top-0 left-0 bottom-0 right-0 min-h-screen bg-gray-700 bg-opacity-45 backdrop-blur-sm p-3">
+    <div className="fixed top-0 left-0 bottom-0 right-0 min-h-screen bg-gray-700 bg-opacity-45 backdrop-blur-sm p-3 z-10">
       <div className="w-full max-w-md mx-auto mt-10">
         <div className="bg-white rounded-md flex justify-between">
           <input

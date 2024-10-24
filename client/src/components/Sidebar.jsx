@@ -48,6 +48,7 @@ const Sidebar = () => {
               color={"#334155"}
               name={user?.name}
               imageUrl={user.profileImage}
+              userId={user?._id}
             />
           </button>
 
