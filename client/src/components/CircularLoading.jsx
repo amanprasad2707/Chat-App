@@ -5,7 +5,7 @@ const CircularLoading = () => {
     <div role="status">
       <svg
         aria-hidden="true"
-        class="w-12 h-12 text-gray-900 animate-spin dark:text-gray-400 fill-primary"
+        class="w-16 h-16 text-gray-900 animate-spin dark:text-gray-200 fill-primary"
         viewBox="0 0 100 101"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
