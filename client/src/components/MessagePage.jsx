@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import moment from "moment";
 import { useSelector } from "react-redux";
 import { Link, useParams } from "react-router-dom";
 import uploadFile from "../lib/uploadFile";
@@ -16,13 +17,24 @@ const MessagePage = () => {
   const { userId } = useParams();
   const user = useSelector((state) => state.user);
   const [loading, setLoading] = useState(false);
+  const [allMessage, setAllMessage] = useState([]);
   const [uploadMenu, setUploadMenu] = useState(false);
+  const currentMessage = useRef(null);
   const [message, setMessage] = useState({
     text: "",
     imageUrl: "",
     videoUrl: "",
     seen: false,
   });
+
+  useEffect(() => {
+    if (currentMessage.current) {
+      currentMessage.current.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [allMessage]);
 
   const [userData, setUserData] = useState({
     name: "",
@@ -39,6 +51,10 @@ const MessagePage = () => {
       socketConnection.emit("message", userId);
       socketConnection.on("message-user", (userDetails) => {
         setUserData(userDetails);
+      });
+      socketConnection.on("message", (data) => {
+        // console.log(data);
+        setAllMessage(data);
       });
     }
   }, [socketConnection, userId, user]);
@@ -67,14 +83,28 @@ const MessagePage = () => {
     setMessage((prev) => ({ ...prev, videoUrl: "" }));
   };
 
-  const handleMessageText = (e)=>{
-    setMessage((prev) => ({ ...prev, text: e.target.value}))
-  }
+  const handleMessageText = (e) => {
+    setMessage((prev) => ({ ...prev, text: e.target.value }));
+  };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    
-  }
+    if (message.text || message.imageUrl || message.videoUrl) {
+      if (socketConnection) {
+        socketConnection.emit("new message", {
+          sender: user?._id,
+          receiver: userId,
+          ...message,
+          messageBy: user?._id,
+        });
+        setMessage({
+          text: "",
+          imageUrl: "",
+          videoUrl: "",
+        });
+      }
+    }
+  };
 
   return (
     <div>
@@ -106,7 +136,10 @@ const MessagePage = () => {
           </div>
         </div>
         <div>
-          <button className="text-xl text-gray-600 cursor-pointer hover:text-primary" title="Attach files">
+          <button
+            className="text-xl text-gray-600 cursor-pointer hover:text-primary"
+            title="Attach files"
+          >
             <HiDotsVertical />
           </button>
         </div>
@@ -116,47 +149,77 @@ const MessagePage = () => {
         className="h-[calc(100vh-128px)] overflow-x-hidden overflow-y-scroll scrollbar bg-slate-300 bg-opacity-40"
         style={{ backgroundImage: `url(${backgroundImage})` }}
       >
+        {/* all message displays here */}
+        <div ref={currentMessage} className="flex flex-col gap-2 py-4">
+          {allMessage.map((message, index) => (
+            <div
+              key={index}
+              className={` bg-white rounded w-fit px-3 py-1 mx-4 ${
+                user._id === message.messageByUserId && "ml-auto bg-teal-100"
+              }`}
+            >
+              <div className="">
+                {message?.imageUrl && (
+                  <img
+                    src={message.imageUrl}
+                    alt={message.imageUrl}
+                    className="h-full object-scale-down w-[300px] pt-2 mb-1"
+                  />
+                )}
+              </div>
+              <div className="">
+                {message?.videoUrl && (
+                  <video
+                    src={message.videoUrl}
+                    controls
+                    className="h-full object-scale-down w-[300px] pt-2 mb-1"
+                  />
+                )}
+              </div>
+              <p>{message.text}</p>
+              <span className="text-xs w-fit ml-auto block text-slate-500">
+                {moment(message.createdAt).format("hh:mm")}
+              </span>
+            </div>
+          ))}
+        </div>
         {/* display uploaded image */}
         {message.imageUrl && (
-          <div className="w-full h-full bg-slate-900 bg-opacity-40 flex justify-center items-center overflow-hidden relative">
+          <div className="w-full h-full bottom-0 sticky bg-slate-900 bg-opacity-35 backdrop-blur-sm flex justify-center items-center overflow-hidden ">
             <div
               onClick={handleClearUploadImage}
               className="absolute top-2 right-2 hover:text-red-600 hover:rotate-180 transition-all ease-linear delay-150 cursor-pointer"
             >
               <IoClose size={30} />
             </div>
-            <div className="bg-white p-3 rounded max-w-[400px] max-h-[400px]">
-                <img
-                  src={message.imageUrl}
-                  className="aspect-auto w-full h-full object-contain rounded"
-                  alt="upload Image"
-                />
-              
+            <div className="bg-transparent p-3 rounded max-w-[500px] max-h-[500px] overflow-y-auto scrollbar ">
+              <img
+                src={message.imageUrl}
+                className="aspect-auto w-full h-full object-contain rounded"
+                alt="upload Image"
+              />
             </div>
           </div>
         )}
         {/* display uploaded video */}
         {message.videoUrl && (
-          <div className="w-full h-full bg-slate-900 bg-opacity-40 flex justify-center items-center overflow-hidden relative">
+          <div className="w-full h-full bottom-0 sticky bg-slate-900 bg-opacity-35 backdrop-blur-sm flex justify-center items-center overflow-hidden ">
             <div
               onClick={handleClearUploadVideo}
               className="absolute top-2 right-2 hover:text-red-600 hover:rotate-180 transition-all ease-linear delay-150 cursor-pointer"
             >
               <IoClose size={30} />
             </div>
-            <div className="bg-white p-3 rounded max-w-[400px] max-h-[400px]">
-                <video src={message.videoUrl} controls muted></video>
-              
+            <div className="bg-white p-3 rounded max-w-[400px] max-h-[400px] overflow-y-auto scrollba">
+              <video src={message.videoUrl} controls muted></video>
             </div>
           </div>
         )}
-
         {loading && (
-          <div className="flex justify-center items-center w-full h-full bg-slate-900 bg-opacity-20">
-            <Loading/>
+          <div className="flex justify-center bottom-0 sticky items-center w-full h-full bg-slate-900 bg-opacity-20">
+            <Loading />
           </div>
         )}
-        show all messages
       </section>
 
       {/* send message */}
@@ -220,7 +283,10 @@ const MessagePage = () => {
             onChange={handleMessageText}
             className="w-full h-full py1 px-4 text-lg outline-none focus:bg-slate-100"
           />
-          <button type="submit" className="p-4 text-slate-500 hover:text-primary transition hover:scale-90 text-2xl mr-4 overflow-hidden">
+          <button
+            type="submit"
+            className="p-4 text-slate-500 hover:text-primary transition hover:scale-90 text-2xl mr-4 overflow-hidden"
+          >
             <IoSend />
           </button>
         </form>
