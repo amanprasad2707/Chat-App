@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaUserPlus } from "react-icons/fa";
 import { BiLogOut } from "react-icons/bi";
 import { IoChatbubbleEllipsesSharp } from "react-icons/io5";
 import { GoArrowUpLeft } from "react-icons/go";
 import { NavLink } from "react-router-dom";
+import { FaImage } from "react-icons/fa6";
+import { FaVideo } from "react-icons/fa6";
 import Avatar from "./Avatar";
 import { useSelector } from "react-redux";
 import EditUserDetails from "./EditUserDetails";
@@ -14,6 +16,43 @@ const Sidebar = () => {
   const [openSearchUser, setOpenSearchUser] = useState(false);
   const [isEditUserDialog, setIsEditUserDialog] = useState(false);
   const user = useSelector((state) => state?.user);
+  const socketConnection = useSelector(
+    (state) => state?.user?.socketConnection
+  );
+  useEffect(() => {
+    if (socketConnection) {
+      const userFromLocalStorage = JSON.parse(localStorage.getItem("userData"));
+      console.log(userFromLocalStorage);
+
+      // socketConnection.emit("sidebar", user._id);
+      socketConnection.emit("sidebar", user._id || userFromLocalStorage._id);
+      socketConnection.on("conversation", (conversation) => {
+        console.log(conversation);
+        const userConversationData = conversation.map((userConversation) => {
+          if (userConversation?.sender._id === userConversation?.receiver._id) {
+            return {
+              ...userConversation,
+              userDetails: userConversation?.sender,
+            };
+          } else if (
+            userConversation?.receiver._id !== user._id ||
+            userFromLocalStorage._id
+          ) {
+            return {
+              ...userConversation,
+              userDetails: userConversation?.receiver,
+            };
+          } else {
+            return {
+              ...userConversation,
+              userDetails: userConversation?.sender,
+            };
+          }
+        });
+        setAllUser(userConversationData);
+      });
+    }
+  }, [socketConnection, user]);
   return (
     <div className="w-full h-full grid grid-cols-[48px,1fr]">
       <div className="bg-slate-100 w-12 h-full py-5 rounded-tr-lg rounded-br-lg text-slate-700 flex flex-col justify-between">
@@ -31,7 +70,7 @@ const Sidebar = () => {
           <div
             className="w-12 h-12 flex justify-center items-center hover:text-primary cursor-pointer"
             title="Add user"
-            onClick={()=>setOpenSearchUser(true)}
+            onClick={() => setOpenSearchUser(true)}
           >
             <FaUserPlus size={25} />
           </div>
@@ -44,7 +83,8 @@ const Sidebar = () => {
             onClick={() => setIsEditUserDialog(true)}
           >
             <Avatar
-              width={30}
+              width={40}
+              height={40}
               color={"#334155"}
               name={user?.name}
               imageUrl={user.profileImage}
@@ -67,18 +107,61 @@ const Sidebar = () => {
         </div>
         <Divider />
         <div className="h-[calc(100vh-73px)] overflow-x-hidden overflow-y-auto scrollbar">
-          {
-            allUser.length == 0 && (
-              <div className="my-12">
-                <div className="flex justify-center items-center my-4 text-slate-500">
-                  <GoArrowUpLeft size={40} strokeWidth={1}/>
-                </div>
-                <p className="text-lg text-center text-slate-400">Explore users to start a conversation with.</p>
+          {allUser.length == 0 && (
+            <div className="my-12">
+              <div className="flex justify-center items-center my-4 text-slate-500">
+                <GoArrowUpLeft size={40} strokeWidth={1} />
               </div>
+              <p className="text-lg text-center text-slate-400">
+                Explore users to start a conversation with.
+              </p>
+            </div>
+          )}
 
-
-            )
-          }
+          {allUser.map((conv, index) => (
+            <div
+              key={conv?._id}
+              className="flex items-center gap-2 m-2 p-2 border rounded hover:bg-slate-100 hover:scale-105 hover:border-primary transition-all cursor-pointer"
+            >
+              <div>
+                <Avatar
+                  imageUrl={conv.userDetails.profileImage}
+                  name={conv.userDetails.name}
+                  height={40}
+                  width={40}
+                />
+              </div>
+              <div>
+                <h3 className="text-ellipsis line-clamp-1 font-semibold text-gray-800 text-sm">
+                  {conv.userDetails.name}
+                </h3>
+                <div className="text-slate-500 text-xs flex items-center gap-1">
+                  <div>
+                    {conv?.lastMessage?.imageUrl && (
+                      <div className="flex gap-1 items-center">
+                        <span>
+                          <FaImage />
+                        </span>
+                        {!conv?.lastMessage?.text && <span>Image</span>}
+                      </div>
+                    )}
+                    {conv?.lastMessage?.videoUrl && (
+                      <div className="flex gap-1 items-center">
+                        <span>
+                          <FaVideo />
+                        </span>
+                        {!conv?.lastMessage?.text && <span>Video</span>}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-ellipsis line-clamp-1 text-xs">
+                    {conv?.lastMessage?.text}
+                  </p>
+                </div>
+              </div>
+                <p className="text-xs w-6 h-6 flex justify-center items-center ml-auto bg-primary text-white rounded-full  font-semibold"><span>{conv?.unseenMessages > 9 ? "9+" : conv?.unseenMessages}</span></p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -92,12 +175,9 @@ const Sidebar = () => {
 
       {/* search user */}
 
-      {
-        openSearchUser && (
-          <SearchUser onClose={()=> setOpenSearchUser(false)}/>
-        )
-      }
-
+      {openSearchUser && (
+        <SearchUser onClose={() => setOpenSearchUser(false)} />
+      )}
     </div>
   );
 };

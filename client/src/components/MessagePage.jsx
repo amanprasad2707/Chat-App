@@ -42,9 +42,7 @@ const MessagePage = () => {
     profileImage: "",
     online: false,
   });
-  const socketConnection = useSelector(
-    (state) => state?.user?.socketConnection
-  );
+  const socketConnection = useSelector((state) => state?.user?.socketConnection);
 
   useEffect(() => {
     if (socketConnection) {
@@ -154,8 +152,10 @@ const MessagePage = () => {
           {allMessage.map((message, index) => (
             <div
               key={index}
-              className={` bg-white rounded w-fit px-3 py-1 mx-4 ${
-                user._id === message.messageByUserId && "ml-auto bg-teal-100"
+              className={`rounded w-fit px-3 py-1 mx-4 ${
+                user._id === message.messageByUserId
+                  ? "ml-auto bg-teal-100"
+                  : "bg-white"
               }`}
             >
               <div className="">

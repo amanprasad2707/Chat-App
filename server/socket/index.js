@@ -20,13 +20,10 @@ const io = new Server(server, {
 const onlineUser = new Set()
 
 io.on('connection', (socket) => {
-  // console.log('User connected:', socket.id);
   /* current user */
   const user = socket.handshake.auth.user;
-  // console.log('Authenticated user:', user);
   /* create a room */
-  // console.log(user?._id);
-  socket.join(user?._id.toString())
+  socket.join(user?._id?.toString())
   onlineUser.add(user?._id?.toString())
   io.emit("onlineUser", Array.from(onlineUser))
 
@@ -40,7 +37,19 @@ io.on('connection', (socket) => {
       profileImage: userDetails.profileImage,
     }
     socket.emit('message-user', payload);
+    /* get previous messages */
+    const getConversationMessage = await ConversationModel.findOne({
+      "$or": [
+        { sender: user._id, receiver: userId },
+        { sender: userId, receiver: user._id },
+      ]
+    }).populate('messages').sort({ updatedAt: -1 });
+
+    socket.emit('previous messages', getConversationMessage)
+
   })
+
+
   socket.on('new message', async (data) => {
     /* check conversation is available to both users */
     const conversation = await ConversationModel.findOne({
@@ -73,16 +82,45 @@ io.on('connection', (socket) => {
       ]
     }).populate('messages').sort({ updatedAt: -1 });
 
-    io.to(data.sender).emit('message', getConversationMessage.messages)
-    io.to(data.receiver).emit('message', getConversationMessage.messages)
-    console.log(getConversationMessage);
-
+    io.to(data.sender).emit('message', getConversationMessage?.messages || []);
+    io.to(data.receiver).emit('message', getConversationMessage?.messages || []);
   })
 
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    // console.log('User disconnected:', socket.id);
-  });
+
+  socket.on('sidebar', async (currentUserId) => {
+    // console.log("currentUserId", currentUserId)
+    try {
+      const currentUserConversation = await ConversationModel.find({
+        '$or': [
+          { sender: currentUserId },
+          { receiver: currentUserId },
+        ]
+      }).sort({ updatedAt: -1 }).populate('messages').populate('sender').populate('receiver');
+      const payload = currentUserConversation.map((conversation) => {
+        const countUnseenMessages = conversation.messages.reduce(
+          (prev, current) => prev + (current.seen ? 0 : 1), 0
+        );
+      
+        // Return an object for each conversation
+        return {
+          _id: conversation?._id,
+          sender: conversation?.sender,
+          receiver: conversation?.receiver,
+          unseenMessages: countUnseenMessages,
+          lastMessage: conversation?.messages[conversation?.messages.length - 1],
+        };
+      });
+      
+socket.emit('conversation', payload);
+    } catch (error) {
+  console.log(error.message);
+}
+  })
+
+// Handle disconnection
+socket.on('disconnect', () => {
+  // console.log('User disconnected:', socket.id);
+});
 });
 
 export {
