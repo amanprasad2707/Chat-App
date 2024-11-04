@@ -3,14 +3,15 @@ import { FaUserPlus } from "react-icons/fa";
 import { BiLogOut } from "react-icons/bi";
 import { IoChatbubbleEllipsesSharp } from "react-icons/io5";
 import { GoArrowUpLeft } from "react-icons/go";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { FaImage } from "react-icons/fa6";
 import { FaVideo } from "react-icons/fa6";
 import Avatar from "./Avatar";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import EditUserDetails from "./EditUserDetails";
 import Divider from "./Divider";
 import SearchUser from "./SearchUser";
+
 const Sidebar = () => {
   const [allUser, setAllUser] = useState([]);
   const [openSearchUser, setOpenSearchUser] = useState(false);
@@ -19,28 +20,32 @@ const Sidebar = () => {
   const socketConnection = useSelector(
     (state) => state?.user?.socketConnection
   );
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   useEffect(() => {
     if (socketConnection) {
       const userFromLocalStorage = JSON.parse(localStorage.getItem("userData"));
-      console.log(userFromLocalStorage);
-
-      // socketConnection.emit("sidebar", user._id);
-      socketConnection.emit("sidebar", user._id || userFromLocalStorage._id);
+      socketConnection.emit(
+        "sidebar",
+        user?._id || userFromLocalStorage?._id || ""
+      );
       socketConnection.on("conversation", (conversation) => {
         console.log(conversation);
+        
         const userConversationData = conversation.map((userConversation) => {
-          if (userConversation?.sender._id === userConversation?.receiver._id) {
+          if (userConversation?.sender?._id === userConversation?.receiver?._id) {
             return {
               ...userConversation,
               userDetails: userConversation?.sender,
             };
           } else if (
-            userConversation?.receiver._id !== user._id ||
-            userFromLocalStorage._id
+            userConversation?.receiver?._id !== user?._id ||
+            userFromLocalStorage?._id
           ) {
             return {
               ...userConversation,
-              userDetails: userConversation?.receiver,
+              userDetails: userConversation?.sender,
             };
           } else {
             return {
@@ -53,11 +58,13 @@ const Sidebar = () => {
       });
     }
   }, [socketConnection, user]);
+
   return (
     <div className="w-full h-full grid grid-cols-[48px,1fr]">
       <div className="bg-slate-100 w-12 h-full py-5 rounded-tr-lg rounded-br-lg text-slate-700 flex flex-col justify-between">
         <div>
           <NavLink
+            to="/"
             className={({ isActive }) =>
               `w-12 h-12 flex justify-center items-center hover:text-primary cursor-pointer ${
                 isActive && "bg-slate-300"
@@ -87,7 +94,7 @@ const Sidebar = () => {
               height={40}
               color={"#334155"}
               name={user?.name}
-              imageUrl={user.profileImage}
+              imageUrl={user?.profileImage}
               userId={user?._id}
             />
           </button>
@@ -95,6 +102,11 @@ const Sidebar = () => {
           <button
             className="w-10 h-12 flex justify-center items-center hover:text-primary cursor-pointer"
             title="logout"
+            onClick={() => {
+              localStorage.removeItem("userData");
+              dispatch({ type: "LOGOUT_USER" });
+              navigate("/login");
+            }}
           >
             <BiLogOut size={30} />
           </button>
@@ -107,7 +119,7 @@ const Sidebar = () => {
         </div>
         <Divider />
         <div className="h-[calc(100vh-73px)] overflow-x-hidden overflow-y-auto scrollbar">
-          {allUser.length == 0 && (
+          {allUser.length === 0 && (
             <div className="my-12">
               <div className="flex justify-center items-center my-4 text-slate-500">
                 <GoArrowUpLeft size={40} strokeWidth={1} />
@@ -119,21 +131,22 @@ const Sidebar = () => {
           )}
 
           {allUser.map((conv, index) => (
-            <div
+            <NavLink
+              to={`/${conv?.userDetails?._id}`}
               key={conv?._id}
               className="flex items-center gap-2 m-2 p-2 border rounded hover:bg-slate-100 hover:scale-105 hover:border-primary transition-all cursor-pointer"
             >
               <div>
                 <Avatar
-                  imageUrl={conv.userDetails.profileImage}
-                  name={conv.userDetails.name}
+                  imageUrl={conv.userDetails?.profileImage}
+                  name={conv.userDetails?.name}
                   height={40}
                   width={40}
                 />
               </div>
               <div>
-                <h3 className="text-ellipsis line-clamp-1 font-semibold text-gray-800 text-sm">
-                  {conv.userDetails.name}
+                <h3 className="text-ellipsis line-clamp-1 font-semibold text-gray-800 text-base">
+                  {conv.userDetails?.name || "Unknown User"}
                 </h3>
                 <div className="text-slate-500 text-xs flex items-center gap-1">
                   <div>
@@ -154,18 +167,22 @@ const Sidebar = () => {
                       </div>
                     )}
                   </div>
-                  <p className="text-ellipsis line-clamp-1 text-xs">
-                    {conv?.lastMessage?.text}
+                  <p className="text-ellipsis overflow-hidden line-clamp-1 w-full">
+                    {conv?.lastMessage?.text || "No message available"}
                   </p>
                 </div>
               </div>
-                <p className="text-xs w-6 h-6 flex justify-center items-center ml-auto bg-primary text-white rounded-full  font-semibold"><span>{conv?.unseenMessages > 9 ? "9+" : conv?.unseenMessages}</span></p>
-            </div>
+              <p className="text-xs w-6 h-6 flex justify-center items-center ml-auto bg-primary text-white rounded-full font-semibold">
+                <span>
+                  {conv?.unseenMessages > 9 ? "9+" : conv?.unseenMessages || 0}
+                </span>
+              </p>
+            </NavLink>
           ))}
         </div>
       </div>
 
-      {/* edit user details */}
+      {/* Edit user details */}
       {isEditUserDialog && (
         <EditUserDetails
           onClose={() => setIsEditUserDialog(false)}
@@ -173,8 +190,7 @@ const Sidebar = () => {
         />
       )}
 
-      {/* search user */}
-
+      {/* Search user */}
       {openSearchUser && (
         <SearchUser onClose={() => setOpenSearchUser(false)} />
       )}

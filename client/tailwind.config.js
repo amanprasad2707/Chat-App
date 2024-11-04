@@ -6,11 +6,13 @@ export default {
   ],
   theme: {
     extend: {
-      colors:{
-				primary : "#1a5319",
-			}
+      colors: {
+        primary: "#1a5319",
+      }
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/line-clamp'),
+  ],
 }
 

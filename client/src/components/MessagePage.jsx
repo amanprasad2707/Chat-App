@@ -13,6 +13,8 @@ import { IoClose } from "react-icons/io5";
 import { IoSend } from "react-icons/io5";
 import backgroundImage from "../assets/backgroundImage.png";
 import Loading from "./CircularLoading";
+
+
 const MessagePage = () => {
   const { userId } = useParams();
   const user = useSelector((state) => state.user);
@@ -27,6 +29,16 @@ const MessagePage = () => {
     seen: false,
   });
 
+  const [userData, setUserData] = useState({
+    name: "",
+    email: "",
+    profileImage: "",
+    online: false,
+  });
+  const socketConnection = useSelector(
+    (state) => state?.user?.socketConnection
+  );
+
   useEffect(() => {
     if (currentMessage.current) {
       currentMessage.current.scrollIntoView({
@@ -36,22 +48,15 @@ const MessagePage = () => {
     }
   }, [allMessage]);
 
-  const [userData, setUserData] = useState({
-    name: "",
-    email: "",
-    profileImage: "",
-    online: false,
-  });
-  const socketConnection = useSelector((state) => state?.user?.socketConnection);
 
   useEffect(() => {
     if (socketConnection) {
-      socketConnection.emit("message", userId);
+      socketConnection.emit("message-page", userId);
+      socketConnection.emit("seen", userId);
       socketConnection.on("message-user", (userDetails) => {
         setUserData(userDetails);
       });
       socketConnection.on("message", (data) => {
-        // console.log(data);
         setAllMessage(data);
       });
     }
@@ -93,7 +98,7 @@ const MessagePage = () => {
           sender: user?._id,
           receiver: userId,
           ...message,
-          messageBy: user?._id,
+          messageByUserId: user?._id,
         });
         setMessage({
           text: "",

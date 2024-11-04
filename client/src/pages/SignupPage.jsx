@@ -6,9 +6,11 @@ import { Link, useNavigate } from "react-router-dom";
 import uploadFile from "../lib/uploadFile";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { setUser } from "../redux/userSlice";
 
 const SignupPage = () => {
-
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const [image, setImage] = useState(null);
   const [data, setData] = useState({
@@ -50,12 +52,15 @@ const SignupPage = () => {
     e.preventDefault();
     const URL = `${import.meta.env.VITE_BACKEND_URL}/api/signup`;
     try {
-      const response = await axios.post(URL, data,{
+      const response = await axios.post(URL, data, {
         withCredentials: true,
       });
       if (response.data.success) {
         toast.success(response.data.message);
-        navigate('/');
+        navigate("/");
+        console.log(response.data);
+        localStorage.setItem("userData", JSON.stringify(response.data.user));
+        dispatch(setUser(response.data.user));
         setData({
           name: "",
           email: "",
@@ -132,18 +137,19 @@ const SignupPage = () => {
                 alt="upload your image here"
                 width="100px"
                 height="100px"
+                className="bg-center object-contain"
               />
-              <div className="flex justify-center items-center text-sm">
-                <p>{image ? image.name : "upload your profile image "}</p>
-                {image && (
-                  <button
-                    onClick={handleClearUploadedImage}
-                    className="relative top-0 left-3 hover:text-primary"
-                  >
-                    <X size={20} />
-                  </button>
-                )}
-              </div>
+                <div className="flex justify-center items-center text-sm relative">
+                  <p className="text-ellipsis whitespace-nowrap overflow-hidden max-w-[200px]">{image ? image.name : "upload your profile image "}</p>
+                  {image && (
+                    <button
+                      onClick={handleClearUploadedImage}
+                      className="relative top-0 left-3 hover:text-primary"
+                    >
+                      <X size={20} />
+                    </button>
+                  )}
+                </div>
             </div>
           </label>
           <input
